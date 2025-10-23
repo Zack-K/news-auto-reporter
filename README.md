@@ -140,6 +140,7 @@ Notionデータベースと連携するために、内部インテグレーシ�
 
 1.  Notionで対象のデータベースページを開きます。
 2.  ブラウザのアドレスバーに表示されるURLを確認します。URLは通常 `https://www.notion.so/{workspace_name}/{database_id}?v={view_id}` のような形式です。
+例: `https://www.notion.so/291a8159567e800f8e3fc699f35eefdd?v=291a8159567e808fb0e8000c5ba3b102&source=copy_link`
 3.  `{database_id}` の部分がデータベースIDです。これをコピーします。
 
 ### Notionデータベースの設定
