@@ -15,12 +15,7 @@
 ## 🪜 実行ステップ
 
 ### ① AIニュースの収集
-以下の技術ブログ・ニュースサイトからRSS経由でAI関連の記事を収集します：
-
-- Google AI Blog  
-- OpenAI Blog  
-- Microsoft AI Blog  
-- Towards Data Science
+GoogleアラートのRSSフィードからAI関連の最新記事を全て収集します。
 
 **抽出項目**
 - 記事タイトル
@@ -76,6 +71,7 @@ Slack Incoming Webhookを使い、指定チャンネルにレポート内容を�
 - レポートタイトル（`header`）
 - 導入文（`section`）
 - カテゴリごとの記事タイトル・URL・要約（`section`）
+- 収集した全てのニュース記事（タイトル、URL、要約）
 - Dividerで区切り
 - 最後に Notion レポートURLへのリンクを添付
 
