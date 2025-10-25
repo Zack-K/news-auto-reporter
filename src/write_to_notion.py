@@ -14,9 +14,9 @@ if not DATABASE_ID:
 
 # Notionプロパティ名を環境変数から取得、デフォルトは日本語
 PROP_NAME = os.environ.get("NOTION_PROPERTY_NAME", "Name")
-PROP_DATE = os.environ.get("NOTION_PROPERTY_DATE", "日付")
-PROP_STATUS = os.environ.get("NOTION_PROPERTY_STATUS", "ステータス")
-PROP_ABSTRACT = os.environ.get("NOTION_PROPERTY_ABSTRACT", "要約")
+PROP_DATE = os.environ.get("NOTION_PROPERTY_DATE", "Date")
+PROP_STATUS = os.environ.get("NOTION_PROPERTY_STATUS", "Status")
+PROP_ABSTRACT = os.environ.get("NOTION_PROPERTY_ABSTRACT", "Abstract")
 PROP_URL = os.environ.get("NOTION_PROPERTY_URL", "URL")
 
 def ensure_notion_database_properties(notion, database_id):

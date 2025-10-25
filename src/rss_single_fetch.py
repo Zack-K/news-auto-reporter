@@ -25,7 +25,7 @@ def fetch_latest_entry(url: str):
     entry = feed.entries[0]
 
     article = {
-        "category": "最新ニュース",  # 必要に応じて変更可
+
         "title": entry.title,
         "url": entry.link,
         "summary": entry.get("summary", ""),

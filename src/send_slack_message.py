@@ -3,8 +3,7 @@ import json
 import os
 
 
-def send_slack_message(webhook_url, channel, notion_report_url, news_articles):
-    report_date = os.getenv("REPORT_DATE", "2025年10月19日")
+def send_slack_message(webhook_url, channel, notion_report_url, news_articles, report_date):
     message_blocks = [
         {
             "type": "header",

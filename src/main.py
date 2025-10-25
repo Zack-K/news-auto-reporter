@@ -92,7 +92,7 @@ def main():
     if slack_webhook_url and notion_report_url:
         print("Sending Slack message...")
         send_slack_message(
-            slack_webhook_url, slack_channel, notion_report_url, processed_articles
+            slack_webhook_url, slack_channel, notion_report_url, processed_articles, os.environ.get("REPORT_DATE")
         )
     else:
         print(
