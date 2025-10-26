@@ -1,13 +1,13 @@
 # rss_single_fetch.py
 import requests
 import feedparser
-from datetime import datetime
 
 
-def fetch_latest_entry(url: str):
+def fetch_all_entries(url: str):
     """
-    RSSフィードから最新記事1件を取得してリスト形式で返す
+    RSSフィードから全ての記事を取得してリスト形式で返す
     """
+    all_articles = []
     try:
         response = requests.get(
             url, timeout=10, headers={"User-Agent": "RSSFetcher/1.0"}
@@ -22,14 +22,18 @@ def fetch_latest_entry(url: str):
         print("記事が見つかりませんでした。")
         return []
 
-    entry = feed.entries[0]
+    for entry in feed.entries:
+        # .get() を使用して KeyError を回避
+        title = entry.get("title", "タイトルなし")
+        link = entry.get("link", "#")
+        summary = entry.get("summary", "")
 
-    article = {
+        article = {
+            "title": title,
+            "url": link,
+            "summary": summary,
+        }
+        all_articles.append(article)
 
-        "title": entry.title,
-        "url": entry.link,
-        "summary": entry.get("summary", ""),
-    }
-
-    print(f"取得記事: {article['title']} ({article['url']})")
-    return [article]  # リスト形式で返す
+        print(f"取得記事: {article['title']} ({article['url']})")
+    return all_articles

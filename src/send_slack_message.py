@@ -3,7 +3,9 @@ import json
 import os
 
 
-def send_slack_message(webhook_url, channel, notion_report_url, news_articles, report_date):
+def send_slack_message(
+    webhook_url, channel, notion_report_url, news_articles, report_date
+):
     message_blocks = [
         {
             "type": "header",
@@ -17,7 +19,7 @@ def send_slack_message(webhook_url, channel, notion_report_url, news_articles, r
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "データサイエンス、データエンジニアリング、データ分析の学習者向けに、AIの最新ニュースをお届けします。",
+                "text": "データサイエンス、データエンジニアリング、データ分析の学習者の皆さん、最新のAIニュースで知識をアップデートし、日々の学習に活かしましょう！今日のニュースが、皆さんの次のステップへのヒントになることを願っています。",
             },
         },
         {"type": "divider"},
@@ -26,7 +28,7 @@ def send_slack_message(webhook_url, channel, notion_report_url, news_articles, r
     # カテゴリごとにニュースを整理
     categories = {}
     for article in news_articles:
-        category = article["category"]
+        category = article.get("category", "その他")
         if category not in categories:
             categories[category] = []
         categories[category].append(article)
@@ -45,6 +47,27 @@ def send_slack_message(webhook_url, channel, notion_report_url, news_articles, r
                     },
                 }
             )
+            if article.get("points"):
+                points_list_formatted = [f"- {p}" for p in article["points"]]
+                points_text_block = "*初学者向けポイント:*\n" + "\n".join(
+                    points_list_formatted
+                )
+                message_blocks.append(
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": points_text_block},
+                    }
+                )
+            if article.get("comment"):
+                message_blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*会話を促すコメント:* {article['comment']}",
+                        },
+                    }
+                )
             message_blocks.append({"type": "divider"})
 
     if notion_report_url:
