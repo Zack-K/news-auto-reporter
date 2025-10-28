@@ -16,6 +16,8 @@ from llm_processor import (
     is_foreign_language,
     categorize_article_with_gemini,
     select_and_summarize_articles_with_gemini,
+    generate_image_keywords_with_gemini,
+    search_image_from_unsplash,
 )
 from send_slack_message import send_slack_message
 
@@ -68,6 +70,20 @@ def main():
     processed_articles_with_llm_info = []
     for article in all_articles:
         print(f"Processing article: {article['title']}")
+
+        # image_urlがNoneの場合、LLMでキーワード生成後、Unsplashで取得を試みる
+        if not article.get("image_url"):
+            print(f"  - 画像URLが見つかりません。LLMでキーワード生成後、Unsplashで検索します: {article['title']}")
+            image_keywords = generate_image_keywords_with_gemini(article["title"], article["summary"])
+            if image_keywords:
+                image_url = search_image_from_unsplash(image_keywords)
+                if image_url:
+                    article["image_url"] = image_url
+                    print(f"  - Unsplashから画像URLを取得しました: {image_url}")
+                else:
+                    print(f"  - Unsplashで画像が見つかりませんでした。")
+            else:
+                print(f"  - LLMで画像キーワードを生成できませんでした。")
 
         llm_result = {"summary": article["summary"], "points": [], "comment": ""}
 

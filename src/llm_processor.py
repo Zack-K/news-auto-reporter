@@ -2,6 +2,7 @@
 import os
 import google.generativeai as genai
 import json
+import requests
 from langdetect import detect, DetectorFactory
 
 # langdetectの決定論的モードを有効にする
@@ -36,50 +37,40 @@ def is_foreign_language(text: str) -> bool:
 
 def translate_and_summarize_with_gemini(text: str) -> dict:
     """
-    Gemini-2.5-flashを使用してテキストを日本語に翻訳し、要約、初学者向けのポイント、会話を促すコメントを生成する。
+    Gemini-2.5-flashを使用してテキストを日本語に翻訳し、要約、初学者向けのポイント、会話を促すコメントをJSON形式で生成する。
     """
+
     try:
         model = genai.GenerativeModel("models/gemini-2.5-flash")
         prompt = f"""以下の記事の概要を日本語に翻訳し、簡潔に要約してください。さらに、その記事の初学者向けのポイントを3行で、そしてSlackでの会話を促すコメントを1行で生成してください。
-
-記事の概要:
-{text}
-
-出力形式:
-要約: [ここに要約]
-ポイント:
-- [ポイント1]
-- [ポイント2]
-- [ポイント3]
-会話を促すコメント: [ここにコメント]"""
+    
+    記事の概要:
+    {text}
+    
+    出力形式はJSONオブジェクトで、以下のキーを含めてください。
+    {{"summary": "[ここに要約]", "points": ["ポイント1", "ポイント2", "ポイント3"], "comment": "[ここにコメント]"}} """
         response = model.generate_content(prompt)
-        response_text = response.text
-        summary_start = response_text.find("要約: ")
-        points_start = response_text.find("ポイント:")
-        comment_start = response_text.find("会話を促すコメント: ")
-        summary = ""
-        points = []
-        comment = ""
+        response_text = response.text.strip()
 
-        if summary_start != -1 and points_start != -1 and comment_start != -1:
-            summary = response_text[
-                summary_start + len("要約: ") : points_start
-            ].strip()
-            points_raw = response_text[
-                points_start + len("ポイント:") : comment_start
-            ].strip()
-            points = [p.strip() for p in points_raw.split("\n-") if p.strip()]
-            comment = response_text[
-                comment_start + len("会話を促すコメント: ") :
-            ].strip()
-        else:
-            # パースに失敗した場合のフォールバック
+        # LLMの応答からマークダウンのコードブロックを削除
+        if response_text.startswith("```json"):
+            response_text = response_text[len("```json") :].strip()
+        if response_text.endswith("```"):
+            response_text = response_text[: -len("```")].strip()
+
+        try:
+            llm_output = json.loads(response_text)
+            return {
+                "summary": llm_output.get("summary", ""),
+                "points": llm_output.get("points", []),
+                "comment": llm_output.get("comment", ""),
+            }
+        except json.JSONDecodeError as e:
             print(
-                f"警告: LLM応答のパースに失敗しました。応答: {response_text[:200]}..."
+                f"警告: LLM応答のJSONパースに失敗しました: {e}. 応答: {response_text[:200]}..."
             )
-            summary = response_text.strip()  # 応答全体を要約として扱う
-        
-        return {"summary": summary, "points": points, "comment": comment}
+            # JSONパースに失敗した場合のフォールバック
+            return {"summary": response_text.strip(), "points": [], "comment": ""}
     except Exception as e:
         print(f"Gemini API呼び出し中にエラーが発生しました: {e}")
         return {
@@ -150,7 +141,7 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
 記事リスト:
 {articles_info}
 
-出力形式:
+出力はJSON配列のみとし、前後に余計なテキストを含めないでください。出力形式:
 [
   {{
     "title": "選定された記事のタイトル",
@@ -161,12 +152,25 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
     "comment": "会話を促すコメント"
   }},
   ... (最大3記事)
-]
-"""
+]"""
         try:
             response = model.generate_content(prompt)
-            # Geminiの応答がJSON形式であることを期待してパース
-            selected_json = json.loads(response.text)
+            response_text = response.text.strip()
+            # LLMの応答からマークダウンのコードブロックを削除
+            if response_text.startswith('```json'):
+                response_text = response_text[len('```json'):].strip()
+            if response_text.endswith('```'):
+                response_text = response_text[:-len('```')].strip()
+
+            # LLMの応答からJSON部分のみを抽出
+            json_start = response_text.find('[')
+            json_end = response_text.rfind(']')
+            if json_start != -1 and json_end != -1:
+                json_str = response_text[json_start : json_end + 1]
+            else:
+                raise json.JSONDecodeError("JSONの開始または終了が見つかりません", response_text, 0)
+
+            selected_json = json.loads(json_str)
             for selected_item in selected_json:
                 # 元の記事からURLを取得し、選定された記事情報に追加
                 original_article = next(
@@ -186,11 +190,64 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
                     )
         except json.JSONDecodeError as e:
             print(
-                f"Gemini APIからのJSON応答のパース中にエラーが発生しました: {e}. 応答: {response.text[:200]}..."
+                f"Gemini APIからのJSON応答のパース中にエラーが発生しました: {e}. 応答: {response_text[:200]}..."
             )
         except Exception as e:
             print(f"Gemini API呼び出し中に記事選定エラーが発生しました: {e}")
-            # エラー時は選定せず、元の記事をそのまま追加するなどのフォールバックも検討
-            # 今回はエラー時は選定しない
-            pass
     return selected_articles
+
+def generate_image_keywords_with_gemini(title: str, summary: str) -> str:
+    """
+    Gemini-2.5-flashを使用して、記事のタイトルと要約から画像検索用のキーワードを生成する。
+    """
+    try:
+        model = genai.GenerativeModel("models/gemini-2.5-flash")
+        prompt = f"""以下の記事のタイトルと要約を読み、記事の内容を最もよく表す英語の画像検索キーワードを3つ生成してください。キーワードはカンマで区切ってください。
+
+タイトル: {title}
+要約: {summary}
+
+キーワード:"""
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Gemini API呼び出し中に画像キーワード生成エラーが発生しました: {e}")
+        return ""
+
+def search_image_from_unsplash(keywords: str) -> str | None:
+    """
+    Unsplash APIを使用して、キーワードに基づいて画像を検索し、画像URLを返す。
+    """
+    unsplash_access_key = os.environ.get("UNSPLASH_ACCESS_KEY")
+    if not unsplash_access_key:
+        print("警告: UNSPLASH_ACCESS_KEY 環境変数が設定されていません。Unsplashからの画像検索をスキップします。")
+        return None
+
+    if not keywords:
+        return None
+
+    try:
+        headers = {
+            "Authorization": f"Client-ID {unsplash_access_key}"
+        }
+        params = {
+            "query": keywords,
+            "orientation": "landscape", # 横長の画像を優先
+            "per_page": 1
+        }
+        response = requests.get("https://api.unsplash.com/search/photos", headers=headers, params=params, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+
+        if data and data["results"]:
+            # 最初の結果のregularサイズの画像URLを返す
+            return data["results"][0]["urls"]["regular"]
+        else:
+            print(f"Unsplashでキーワード '{keywords}' に一致する画像が見つかりませんでした。")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Unsplash API呼び出し中にエラーが発生しました: {e}")
+        return None
+    except Exception as e:
+        print(f"Unsplashからの画像検索中に予期せぬエラーが発生しました: {e}")
+        return None

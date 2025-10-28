@@ -4,3 +4,5 @@ notion-client
 python-dotenv
 google-generativeai
 langdetect
+beautifulsoup4
+lxml

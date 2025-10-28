@@ -133,6 +133,15 @@ def create_notion_report_page(notion, processed_articles):
         PROP_STATUS: {"status": {"name": "Published"}},
     }
 
+    # カバー画像の設定
+    cover = None
+    # processed_articlesの中から最初の記事のimage_urlをカバーとして使用
+    if processed_articles and processed_articles[0].get("image_url"):
+        cover = {
+            "type": "external",
+            "external": {"url": processed_articles[0]["image_url"]},
+        }
+
     # ページコンテンツのブロックを構築
     children = [
         {
@@ -205,6 +214,7 @@ def create_notion_report_page(notion, processed_articles):
             parent={"database_id": DATABASE_ID},
             properties=properties,
             children=children,
+            cover=cover,
         )
         print(f"Notionレポートページが正常に作成されました: {response['url']}")
         return response["url"]
