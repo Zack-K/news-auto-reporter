@@ -113,7 +113,7 @@ def ensure_notion_database_properties(notion, database_id):
             except json.JSONDecodeError:
                 error_message = e.body
         print(
-            f"Notionデータベースプロパティの確認/作成中にエラーが発生しました: {e.code} - {error_message}. 詳細: {str(e)}"
+            f"Notion APIエラーが発生しました: {e.code} - {error_message}. 詳細: {str(e)}"
         )
         return False
     except Exception as e:
@@ -169,8 +169,7 @@ def create_notion_report_page(notion, processed_articles):
                 "type": "heading_2",
                 "heading_2": {
                     "rich_text": [
-                        {"type": "text", "text": {"content": f"【{category}】"}}
-                    ]
+                        {"type": "text", "text": {"content": f"【{category}】"}}]
                 },
             }
         )
@@ -187,8 +186,7 @@ def create_notion_report_page(notion, processed_articles):
                                     "content": article.get("title", "タイトルなし"),
                                     "link": {"url": article.get("url", "#")},
                                 },
-                            }
-                        ]
+                            }]
                     },
                 }
             )
@@ -201,8 +199,7 @@ def create_notion_report_page(notion, processed_articles):
                             {
                                 "type": "text",
                                 "text": {"content": article.get("summary", "")},
-                            }
-                        ]
+                            }]
                     },
                 }
             )
@@ -235,3 +232,4 @@ def create_notion_report_page(notion, processed_articles):
     except Exception as e:
         print(f"予期せぬエラーが発生しました: {e}")
         return None
+

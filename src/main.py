@@ -71,19 +71,7 @@ def main():
     for article in all_articles:
         print(f"Processing article: {article['title']}")
 
-        # image_urlがNoneの場合、LLMでキーワード生成後、Unsplashで取得を試みる
-        if not article.get("image_url"):
-            print(f"  - 画像URLが見つかりません。LLMでキーワード生成後、Unsplashで検索します: {article['title']}")
-            image_keywords = generate_image_keywords_with_gemini(article["title"], article["summary"])
-            if image_keywords:
-                image_url = search_image_from_unsplash(image_keywords)
-                if image_url:
-                    article["image_url"] = image_url
-                    print(f"  - Unsplashから画像URLを取得しました: {image_url}")
-                else:
-                    print(f"  - Unsplashで画像が見つかりませんでした。")
-            else:
-                print(f"  - LLMで画像キーワードを生成できませんでした。")
+
 
         llm_result = {"summary": article["summary"], "points": [], "comment": ""}
 
@@ -117,6 +105,21 @@ def main():
     if not final_articles_for_report:
         print("No articles selected for the report. Exiting.")
         return
+
+    # Notionのカバー画像用として、選定された最初の記事に対してUnsplash検索を1回だけ実行
+    if final_articles_for_report and not final_articles_for_report[0].get("image_url"):
+        first_article = final_articles_for_report[0]
+        print(f"  - Notionカバー画像用: 画像URLが見つかりません。LLMでキーワード生成後、Unsplashで検索します: {first_article['title']}")
+        image_keywords = generate_image_keywords_with_gemini(first_article["title"], first_article["summary"], first_article["category"]) # category引数を追加
+        if image_keywords:
+            image_url = search_image_from_unsplash(image_keywords)
+            if image_url:
+                first_article["image_url"] = image_url
+                print(f"  - Notionカバー画像用: Unsplashから画像URLを取得しました: {image_url}")
+            else:
+                print(f"  - Notionカバー画像用: Unsplashで画像が見つかりませんでした。")
+        else:
+            print(f"  - Notionカバー画像用: LLMで画像キーワードを生成できませんでした。")
 
     notion_api_key = os.environ.get("NOTION_API_KEY")
     if not notion_api_key:

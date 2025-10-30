@@ -196,14 +196,15 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
             print(f"Gemini API呼び出し中に記事選定エラーが発生しました: {e}")
     return selected_articles
 
-def generate_image_keywords_with_gemini(title: str, summary: str) -> str:
+def generate_image_keywords_with_gemini(title: str, summary: str, category: str) -> str:
     """
-    Gemini-2.5-flashを使用して、記事のタイトルと要約から画像検索用のキーワードを生成する。
+    Gemini-2.5-flashを使用して、記事のタイトル、要約、カテゴリから画像検索用のキーワードを生成する。
     """
     try:
         model = genai.GenerativeModel("models/gemini-2.5-flash")
-        prompt = f"""以下の記事のタイトルと要約を読み、記事の内容を最もよく表す英語の画像検索キーワードを3つ生成してください。キーワードはカンマで区切ってください。
+        prompt = f"""以下の記事のタイトル、要約、カテゴリを読み、記事の内容を最もよく表す英語の画像検索キーワードを3つ生成してください。キーワードはカンマで区切ってください。
 
+カテゴリ: {category}
 タイトル: {title}
 要約: {summary}
 
