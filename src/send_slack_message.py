@@ -4,7 +4,7 @@ import os
 
 
 def send_slack_message(
-    webhook_url, channel, notion_report_url, news_articles, report_date
+    webhook_url, channel, notion_report_url, news_articles, report_date, closing_comment
 ):
     message_blocks = [
         {
@@ -58,16 +58,8 @@ def send_slack_message(
                         "text": {"type": "mrkdwn", "text": points_text_block},
                     }
                 )
-            if article.get("comment"):
-                message_blocks.append(
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*会話を促すコメント:* {article['comment']}",
-                        },
-                    }
-                )
+            # 個別の記事に対する「会話を促すコメント」のブロックは削除
+
             message_blocks.append({"type": "divider"})
 
     if notion_report_url:
@@ -77,6 +69,18 @@ def send_slack_message(
                 "text": {
                     "type": "mrkdwn",
                     "text": f"Notionで詳細を見る: <{notion_report_url}|AIニュースレポート - {report_date}>",
+                },
+            }
+        )
+    
+    # クロージングコメントを追加
+    if closing_comment:
+        message_blocks.append(
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": closing_comment,
                 },
             }
         )

@@ -42,13 +42,13 @@ def translate_and_summarize_with_gemini(text: str) -> dict:
 
     try:
         model = genai.GenerativeModel("models/gemini-2.5-flash")
-        prompt = f"""以下の記事の概要を日本語に翻訳し、簡潔に要約してください。さらに、その記事の初学者向けのポイントを3行で、そしてSlackでの会話を促すコメントを1行で生成してください。
+        prompt = f"""以下の記事の概要を日本語に翻訳し、データサイエンス、データエンジニアリング、データ分析の初学者が読みやすいように、専門用語を避けつつ、具体例や比喩を交えながら、もう少し詳しく要約してください。要約の長さは200文字程度を目標とします。また、その記事の初学者向けのポイントを3行で生成してください。
     
     記事の概要:
     {text}
     
     出力形式はJSONオブジェクトで、以下のキーを含めてください。
-    {{"summary": "[ここに要約]", "points": ["ポイント1", "ポイント2", "ポイント3"], "comment": "[ここにコメント]"}} """
+    {{"summary": "[ここに要約]", "points": ["ポイント1", "ポイント2", "ポイント3"]}} """
         response = model.generate_content(prompt)
         response_text = response.text.strip()
 
@@ -136,7 +136,7 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
             articles_info += f"記事{i + 1} - タイトル: {article['title']}, 要約: {article['summary']}\n"
 
         prompt = f"""以下の{category}カテゴリの記事の中から、データサイエンス、データエンジニアリング、データ分析の学習者にとって最も有用で、会話のきっかけになりそうな記事を最大3つ選んでください。
-選定した各記事について、初学者向けのポイントを3行で、そしてSlackでの会話を促すコメントを1行で生成してください。
+選定した各記事について、初学者向けのポイントを3行で生成してください。
 
 記事リスト:
 {articles_info}
@@ -148,8 +148,7 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
     "url": "選定された記事のURL",
     "summary": "選定された記事の要約",
     "category": "{category}",
-    "points": ["ポイント1", "ポイント2", "ポイント3"],
-    "comment": "会話を促すコメント"
+    "points": ["ポイント1", "ポイント2", "ポイント3"]
   }},
   ... (最大3記事)
 ]"""
@@ -252,3 +251,26 @@ def search_image_from_unsplash(keywords: str) -> str | None:
     except Exception as e:
         print(f"Unsplashからの画像検索中に予期せぬエラーが発生しました: {e}")
         return None
+
+def generate_closing_comment_with_gemini(articles: list) -> str:
+    """
+    Gemini-2.5-flashを使用して、選定された記事のリストに基づいて、
+    コミュニティメンバーのコミュニケーションを促進するクロージングコメントを生成する。
+    """
+    try:
+        model = genai.GenerativeModel("models/gemini-2.5-flash")
+        articles_info = ""
+        for i, article in enumerate(articles):
+            articles_info += f"- {article.get('title', 'タイトルなし')} ({article.get('category', 'カテゴリ不明')})\n"
+
+        prompt = f"""以下のAIニュースレポートで選定された記事のリストを参考に、データサイエンス、データエンジニアリング、データ分析の学習者コミュニティのメンバーが、これらのニュースについて活発にコミュニケーションを取りたくなるような、ポジティブで魅力的なクロージングコメントを100文字程度で生成してください。
+
+選定された記事:
+{articles_info}
+
+クロージングコメント:"""
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Gemini API呼び出し中にクロージングコメント生成エラーが発生しました: {e}")
+        return "今日のAIニュースレポートはいかがでしたか？ぜひコミュニティで感想や意見を共有し、議論を深めましょう！" # フォールバックコメント

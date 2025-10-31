@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+import time # 追加
 
 # 他のスクリプトから関数をインポート
 from rss_single_fetch import fetch_all_entries
@@ -18,6 +19,7 @@ from llm_processor import (
     select_and_summarize_articles_with_gemini,
     generate_image_keywords_with_gemini,
     search_image_from_unsplash,
+    generate_closing_comment_with_gemini,
 )
 from send_slack_message import send_slack_message
 
@@ -35,6 +37,7 @@ def main():
         print(f"エラー: Gemini APIの初期化に失敗しました - {e}")
         return
 
+    print(f"[{datetime.now()}] --- 1. AIニュースの収集 開始 ---") # 追加
     # 1. AIニュースの収集
     # GoogleアラートのRSSフィードのURLを環境変数から取得
     google_alerts_rss_urls_str = os.environ.get("GOOGLE_ALERTS_RSS_URLS")
@@ -56,7 +59,9 @@ def main():
     if not all_articles:
         print("No articles fetched. Exiting.")
         return
+    print(f"[{datetime.now()}] --- 1. AIニュースの収集 終了 ---") # 追加
 
+    print(f"[{datetime.now()}] --- 2. ニュースの翻訳と要約、カテゴリ分類、選定 開始 ---") # 追加
     # 2. ニュースの翻訳と要約、カテゴリ分類、選定
     categories = [
         "データサイエンス",
@@ -81,13 +86,13 @@ def main():
             llm_result = translate_and_summarize_with_gemini(article["summary"])
             article["summary"] = llm_result["summary"]
             article["points"] = llm_result["points"]
-            article["comment"] = llm_result["comment"]
+            # article["comment"] = llm_result["comment"]
         else:
             print(f"  - 記事は日本語であるため翻訳はスキップ: {article['title']}")
             # 日本語記事でもポイントとコメントを生成
             llm_result = translate_and_summarize_with_gemini(article["summary"])
             article["points"] = llm_result["points"]
-            article["comment"] = llm_result["comment"]
+            # article["comment"] = llm_result["comment"]
 
         # カテゴリ分類
         predicted_category = categorize_article_with_gemini(
@@ -97,6 +102,9 @@ def main():
 
         processed_articles_with_llm_info.append(article)
 
+    print(f"[{datetime.now()}] --- 2. ニュースの翻訳と要約、カテゴリ分類、選定 終了 ---") # 追加
+
+    print(f"[{datetime.now()}] --- 3. LLMによる記事選定と絞り込み 開始 ---") # 追加
     # 3. LLMによる記事選定と絞り込み
     final_articles_for_report = select_and_summarize_articles_with_gemini(
         processed_articles_with_llm_info, categories
@@ -105,7 +113,9 @@ def main():
     if not final_articles_for_report:
         print("No articles selected for the report. Exiting.")
         return
+    print(f"[{datetime.now()}] --- 3. LLMによる記事選定と絞り込み 終了 ---") # 追加
 
+    print(f"[{datetime.now()}] --- Notionレポートの作成 開始 ---") # 追加
     # Notionのカバー画像用として、選定された最初の記事に対してUnsplash検索を1回だけ実行
     if final_articles_for_report and not final_articles_for_report[0].get("image_url"):
         first_article = final_articles_for_report[0]
@@ -137,12 +147,17 @@ def main():
 
     print("Creating Notion report page...")
     notion_report_url = create_notion_report_page(notion, final_articles_for_report)
+    print(f"[{datetime.now()}] --- Notionレポートの作成 終了 ---") # 追加
 
+    print(f"[{datetime.now()}] --- 4. Slack通知メッセージの作成と送信 開始 ---") # 追加
     # 4. Slack通知メッセージの作成と送信
     slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
     slack_channel = os.environ.get(
         "SLACK_CHANNEL", "#ai-news"
     )  # 設定されていない場合は#ai-newsをデフォルトとする
+
+    # クロージングコメントを生成
+    closing_comment = generate_closing_comment_with_gemini(final_articles_for_report)
 
     if slack_webhook_url and notion_report_url:
         print("Sending Slack message...")
@@ -152,6 +167,7 @@ def main():
             notion_report_url,
             final_articles_for_report,
             os.environ.get("REPORT_DATE"),
+            closing_comment,
         )
     else:
         print(
@@ -161,6 +177,7 @@ def main():
             print(
                 "To enable Slack notifications, please set the SLACK_WEBHOOK_URL environment variable."
             )
+    print(f"[{datetime.now()}] --- 4. Slack通知メッセージの作成と送信 終了 ---") # 追加
 
 
 if __name__ == "__main__":
