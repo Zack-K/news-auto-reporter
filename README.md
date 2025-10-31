@@ -14,7 +14,15 @@
 - **Notionレポートの作成:** 選定された記事を基に、Notionに「AIニュースレポート - YYYY年MM月DD日」という単一のレポートページを作成します。このページには、導入文、カテゴリごとの見出し、各記事のタイトル（URLリンク付き）、要約、初学者向けポイント、会話を促すコメント、そしてレポートのカバー画像（Unsplashから検索された画像）が含まれます。
 
 ## 実行スケジュール
-毎日午前8時00分（日本標準時）に定期実行されます。このスケジュールは、cronなどの外部ツールによって設定されることを想定しています。
+毎日午前8時00分（日本標準時）に定期実行されます。このスケジュールは、GitHub Actionsのワークフローによって自動化されています。
+
+**GitHub Actionsによる自動実行:**
+*   **ワークフローファイル:** `.github/workflows/daily_report.yml`
+*   **トリガー:**
+    *   `schedule`: 毎日午前8時00分（日本標準時）に実行されるように設定されています。
+    *   `workflow_dispatch`: GitHub UIから手動でワークフローを実行することも可能です。
+*   **環境変数:** 必要なAPIキーや設定値は、GitHubリポジトリのSecretsとして安全に管理されています。
+*   **失敗時の通知:** ワークフローの実行が失敗した場合、Slackに通知が送信されます。
 
 ## 環境構築
 本プロジェクトの環境構築については、[環境構築ガイド](documents/setup_guide.md) を参照してください。
@@ -33,6 +41,7 @@
 | `NOTION_DATABASE_ID`        | NotionデータベースID                    |
 | `SLACK_WEBHOOK_URL`         | Slack Incoming Webhook URL              |
 | `SLACK_CHANNEL`             | Slack通知チャンネル名                   |
+| `UNSPLASH_ACCESS_KEY`       | Unsplash APIキー                    |
 
 ## 実行例
 
@@ -44,6 +53,7 @@ export NOTION_API_KEY="your_notion_key"
 export NOTION_DATABASE_ID="your_db_id"
 export SLACK_WEBHOOK_URL="your_webhook_url"
 export SLACK_CHANNEL="#ai-news"
+export UNSPLASH_ACCESS_KEY="your_unsplash_key"
 
 # 2. パイプラインを実行
 python main.py
@@ -60,7 +70,7 @@ project/
 ├── write_to_notion.py         # Notionへの書き込み
 ├── send_slack_message.py      # Slack通知
 ├── main.py                    # 全体実行パイプライン
-├── llm_processor.py           # LLMによる記事処理（翻訳、要約、カテゴリ分類、選定）
+├── llm_processor.py           # LLMによる記事処理（翻訳、要約、カテゴリ分類、選定、画像キーワード生成）
 └── .env                       # 環境変数定義
 ```
 
