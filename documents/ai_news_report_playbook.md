@@ -42,7 +42,7 @@ GoogleアラートのRSSフィードからAI関連の最新記事を全て収集
 - 固有名詞（モデル名、技術名）  
 - 記事発行元（例：OpenAI → 人工知能）
 
-各カテゴリから、要件やテーマに合う記事をLLMで選定し、最大3記事に絞り込みます。
+各カテゴリから、要件やテーマに合う記事をLLMで選定し、最大3記事に絞り込みます。選定された記事のタイトル、要約、カテゴリから画像検索用のキーワードを生成し、Unsplashから関連画像を検索します。
 
 ---
 
@@ -58,6 +58,7 @@ GoogleアラートのRSSフィードからAI関連の最新記事を全て収集
 - 各記事タイトル（URLリンク付き、`heading_3`）
 - 記事の要約（`paragraph`）
 - 記事間には `divider` を挿入
+- レポートのカバー画像（Unsplashから検索された画像）
 
 **処理フロー**
 1. `fetch_latest_entry()` → RSS取得
@@ -85,13 +86,16 @@ Slack Incoming Webhookを使い、指定チャンネルにレポート内容を�
 
 ## ⚙️ 必要な環境変数
 
-| 変数名                | 説明                                | 例                                                |
-|-----------------------|-------------------------------------|--------------------------------------------------|
-| `NOTION_API_KEY`       | NotionのAPIキー                     | `secret_xxxxxxxxxxxxxxxxx`                       |
-| `NOTION_DATABASE_ID`   | 書き込み先NotionデータベースのID    | `291axxxxxxxxxxxxx`|
-| `SLACK_WEBHOOK_URL`    | Slack Incoming WebhookのURL         | `https://hooks.slack.com/services/...`          |
-| `SLACK_CHANNEL`        | 通知するSlackチャンネル名           | `#ai-news`                                      |
-| `REPORT_DATE`          | レポートの日付                      | `2025-10-21`                                    |
+| 変数名                      | 説明                                | 例                                                |
+|-----------------------------|-------------------------------------|--------------------------------------------------|
+| `GOOGLE_API_KEY`            | Google Gemini APIキー               | `your_gemini_api_key`                            |
+| `GOOGLE_ALERTS_RSS_URLS`    | GoogleアラートのRSSフィードURL      | `https://alerts.google.com/alerts/feeds/...`     |
+| `NOTION_API_KEY`            | NotionのAPIキー                     | `secret_xxxxxxxxxxxxxxxxx`                       |
+| `NOTION_DATABASE_ID`        | 書き込み先NotionデータベースのID    | `291axxxxxxxxxxxxx`                              |
+| `SLACK_WEBHOOK_URL`         | Slack Incoming WebhookのURL         | `https://hooks.slack.com/services/...`          |
+| `SLACK_CHANNEL`             | 通知するSlackチャンネル名           | `#ai-news`                                      |
+| `UNSPLASH_ACCESS_KEY`       | Unsplash APIキー                    | `your_unsplash_key`                              |
+| `REPORT_DATE`          | レポートの日付（実行時に自動設定）  | `2025-10-21` (例)                               |
 
 ---
 
@@ -112,6 +116,7 @@ project/
 ├── write_to_notion.py         # Notionへの書き込み
 ├── send_slack_message.py      # Slack通知
 ├── main.py                    # 全体実行パイプライン
+├── llm_processor.py           # LLMによる記事処理（翻訳、要約、カテゴリ分類、選定、画像キーワード生成）
 └── .env                       # 環境変数定義
 ```
 
