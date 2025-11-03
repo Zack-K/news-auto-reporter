@@ -121,7 +121,9 @@ def ensure_notion_database_properties(notion, database_id):
         return False
 
 
-def create_notion_report_page(notion, processed_articles):
+from typing import Optional
+
+def create_notion_report_page(notion, processed_articles, cover_image_url: Optional[str] = None):
     report_date_str = os.getenv("REPORT_DATE", datetime.now().strftime("%Y-%m-%d"))
     page_title = f"AIニュースレポート - {report_date_str}"
     introduction_text = "データサイエンス、データエンジニアリング、データ分析の学習者向けに、AIの最新ニュースを毎日お届けします。"
@@ -135,11 +137,10 @@ def create_notion_report_page(notion, processed_articles):
 
     # カバー画像の設定
     cover = None
-    # processed_articlesの中から最初の記事のimage_urlをカバーとして使用
-    if processed_articles and processed_articles[0].get("image_url"):
+    if cover_image_url:
         cover = {
             "type": "external",
-            "external": {"url": processed_articles[0]["image_url"]},
+            "external": {"url": cover_image_url},
         }
 
     # ページコンテンツのブロックを構築
