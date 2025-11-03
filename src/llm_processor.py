@@ -1,8 +1,8 @@
 # llm_processor.py
+# llm_processor.py
 import os
 import google.generativeai as genai
 import json
-import requests
 from langdetect import detect, DetectorFactory
 
 # langdetectの決定論的モードを有効にする
@@ -195,63 +195,6 @@ def select_and_summarize_articles_with_gemini(articles: list, categories: list) 
             print(f"Gemini API呼び出し中に記事選定エラーが発生しました: {e}")
     return selected_articles
 
-def generate_image_keywords_with_gemini(title: str, summary: str, category: str) -> str:
-    """
-    Gemini-2.5-flashを使用して、記事のタイトル、要約、カテゴリから画像検索用のキーワードを生成する。
-    """
-    try:
-        model = genai.GenerativeModel("models/gemini-2.5-flash")
-        prompt = f"""以下の記事のタイトル、要約、カテゴリを読み、記事の内容を最もよく表す英語の画像検索キーワードを3つ生成してください。キーワードはカンマで区切ってください。
-
-カテゴリ: {category}
-タイトル: {title}
-要約: {summary}
-
-キーワード:"""
-        response = model.generate_content(prompt)
-        return response.text.strip()
-    except Exception as e:
-        print(f"Gemini API呼び出し中に画像キーワード生成エラーが発生しました: {e}")
-        return ""
-
-def search_image_from_unsplash(keywords: str) -> str | None:
-    """
-    Unsplash APIを使用して、キーワードに基づいて画像を検索し、画像URLを返す。
-    """
-    unsplash_access_key = os.environ.get("UNSPLASH_ACCESS_KEY")
-    if not unsplash_access_key:
-        print("警告: UNSPLASH_ACCESS_KEY 環境変数が設定されていません。Unsplashからの画像検索をスキップします。")
-        return None
-
-    if not keywords:
-        return None
-
-    try:
-        headers = {
-            "Authorization": f"Client-ID {unsplash_access_key}"
-        }
-        params = {
-            "query": keywords,
-            "orientation": "landscape", # 横長の画像を優先
-            "per_page": 1
-        }
-        response = requests.get("https://api.unsplash.com/search/photos", headers=headers, params=params, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-
-        if data and data["results"]:
-            # 最初の結果のregularサイズの画像URLを返す
-            return data["results"][0]["urls"]["regular"]
-        else:
-            print(f"Unsplashでキーワード '{keywords}' に一致する画像が見つかりませんでした。")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Unsplash API呼び出し中にエラーが発生しました: {e}")
-        return None
-    except Exception as e:
-        print(f"Unsplashからの画像検索中に予期せぬエラーが発生しました: {e}")
-        return None
-
 def generate_closing_comment_with_gemini(articles: list) -> str:
     """
     Gemini-2.5-flashを使用して、選定された記事のリストに基づいて、
@@ -274,3 +217,4 @@ def generate_closing_comment_with_gemini(articles: list) -> str:
     except Exception as e:
         print(f"Gemini API呼び出し中にクロージングコメント生成エラーが発生しました: {e}")
         return "今日のAIニュースレポートはいかがでしたか？ぜひコミュニティで感想や意見を共有し、議論を深めましょう！" # フォールバックコメント
+
