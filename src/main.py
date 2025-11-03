@@ -22,6 +22,7 @@ from llm_processor import (
     generate_closing_comment_with_gemini,
 )
 from send_slack_message import send_slack_message
+from utils import remove_html_tags
 
 load_dotenv()  # .envファイルを読み込む
 
@@ -113,6 +114,10 @@ def main():
     if not final_articles_for_report:
         print("No articles selected for the report. Exiting.")
         return
+    # 追加: final_articles_for_report内の各記事タイトルからHTMLタグを除去
+    for article in final_articles_for_report:
+        article['title'] = remove_html_tags(article['title'])
+
     print(f"[{datetime.now()}] --- 3. LLMによる記事選定と絞り込み 終了 ---") # 追加
 
     print(f"[{datetime.now()}] --- Notionレポートの作成 開始 ---") # 追加
