@@ -100,6 +100,16 @@
         *   LLMからの応答が不正なJSONの場合、リストが破損せず、適切にエラーハンドリングされること（該当カテゴリの記事が選定されないなど）。
         *   Gemini API呼び出し中にエラーが発生した場合、空のリストが返されること。
         *   選定された記事のタイトルが元記事に存在しない場合、警告が出力されること。
+*   **`generate_image_keywords_with_gemini`**:
+    *   **正常系**: 記事のタイトル、要約、カテゴリから、英語の画像検索キーワードが3つ（カンマ区切り）生成されること。
+    *   **異常系**: Gemini API呼び出し中にエラーが発生した場合、空文字列が返されること。
+*   **`search_image_from_unsplash`**:
+    *   **正常系**: 有効なキーワードが与えられた場合、Unsplashから画像URLが返されること。
+    *   **異常系**:
+        *   `UNSPLASH_ACCESS_KEY`が設定されていない場合、`None`が返され、警告が出力されること。
+        *   キーワードが空の場合、`None`が返されること。
+        *   Unsplash API呼び出し中にエラーが発生した場合、`None`が返されること。
+        *   キーワードに一致する画像が見つからない場合、`None`が返されること。
 *   **`generate_closing_comment_with_gemini`**:
     *   **正常系**: 選定された記事のリストに基づいて、コミュニケーションを促進する100文字程度のクロージングコメントが生成されること。
     *   **異常系**:
@@ -142,7 +152,7 @@
 
 *   **結合テスト視点（モック利用）**:
     *   **正常フロー**:
-        *   すべての外部依存関数（`fetch_all_entries`, `initialize_gemini`, `translate_and_summarize_with_gemini`, `categorize_article_with_gemini`, `select_and_summarize_articles_with_gemini`, `generate_closing_comment_with_gemini`, `ensure_notion_database_properties`, `create_notion_report_page`, `send_slack_message`）が正しい順序で、適切な引数とともに呼び出されていること。
+        *   すべての外部依存関数（`fetch_all_entries`, `initialize_gemini`, `translate_and_summarize_with_gemini`, `categorize_article_with_gemini`, `select_and_summarize_articles_with_gemini`, `generate_image_keywords_with_gemini`, `search_image_from_unsplash`, `generate_closing_comment_with_gemini`, `ensure_notion_database_properties`, `create_notion_report_page`, `send_slack_message`）が正しい順序で、適切な引数とともに呼び出されていること。
         *   `os.environ["REPORT_DATE"]` が正しく設定されていること。
         *   `final_articles_for_report`内の各記事タイトルからHTMLタグが除去されていること。
     *   **異常フロー**:
@@ -178,6 +188,10 @@
 *   **Notionデータ**:
     *   Notion APIクライアントで使用するモックデータ（データベース情報、ページ作成応答など）。
     *   Notionデータベースのプロパティ情報（不足しているプロパティ、タイプが異なるプロパティなど）。
+*   **Unsplashデータ**:
+    *   Unsplash APIからの正常な画像検索応答データ。
+    *   Unsplash APIからの画像なし応答データ。
+    *   Unsplash APIからのエラー応答。
 *   **Slackデータ**:
     *   Slack Webhookへの正常なペイロードデータ。
     *   Slack Webhookからのエラー応答。
