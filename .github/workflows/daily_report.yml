@@ -9,35 +9,35 @@ on:
   workflow_dispatch: # 手動実行を可能にする
 
 jobs:
-    build_and_test:
-      runs-on: ubuntu-latest
+  build_and_test:
+    runs-on: ubuntu-latest
   
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
   
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
   
-        - name: Install uv and enable caching
-          uses: astral-sh/setup-uv@v6
-          with:
-            version: 'latest'
-            enable-cache: true
+      - name: Install uv and enable caching
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 'latest'
+          enable-cache: true
   
-        - name: Install dependencies
-          run: uv pip install -r requirements.txt
+      - name: Install dependencies
+        run: uv pip install -r requirements.txt
   
-        - name: Run Ruff (static analysis)
-          run: uv run ruff check .
+      - name: Run Ruff (static analysis)
+        run: uv run ruff check .
   
-        - name: Run Pytest (unit tests)
-          run: uv run pytest
+      - name: Run Pytest (unit tests)
+        run: uv run pytest
   
-        - name: Prune uv cache
-          run: uv cache prune --ci
+      - name: Prune uv cache
+        run: uv cache prune --ci
 
   run_report:
     needs: build_and_test
