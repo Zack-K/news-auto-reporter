@@ -6,13 +6,6 @@ from dotenv import load_dotenv
 from typing import Optional
 
 load_dotenv()  # .envファイルを読み込む
-# Notion APIキーとデータベースID
-DATABASE_ID = os.environ.get("NOTION_DATABASE_ID")
-
-if not DATABASE_ID:
-    raise ValueError(
-        "NOTION_DATABASE_ID 環境変数が設定されていません。NotionデータベースIDを設定してください。"
-    )
 
 # Notionプロパティ名を環境変数から取得、デフォルトは日本語
 PROP_NAME = os.environ.get("NOTION_PROPERTY_NAME", "Name")
@@ -23,6 +16,10 @@ PROP_URL = os.environ.get("NOTION_PROPERTY_URL", "URL")
 
 
 def ensure_notion_database_properties(notion, database_id):
+    if not database_id:
+        print("エラー: NotionデータベースIDが指定されていません。")
+        return False
+
     # Define expected properties with their types and configurations
     expected_properties_config = {
         PROP_NAME: {"type": "title", "config": {"title": {}}},
@@ -122,6 +119,11 @@ def ensure_notion_database_properties(notion, database_id):
         return False
 
 def create_notion_report_page(notion, processed_articles, cover_image_url: Optional[str] = None):
+    database_id = os.environ.get("NOTION_DATABASE_ID")
+    if not database_id:
+        print("エラー: NOTION_DATABASE_ID 環境変数が設定されていません。NotionデータベースIDを設定してください。")
+        return None
+
     report_date_str = os.getenv("REPORT_DATE", datetime.now().strftime("%Y-%m-%d"))
     page_title = f"AIニュースレポート - {report_date_str}"
     introduction_text = "データサイエンス、データエンジニアリング、データ分析の学習者向けに、AIの最新ニュースを毎日お届けします。"
@@ -207,7 +209,7 @@ def create_notion_report_page(notion, processed_articles, cover_image_url: Optio
     print(f"Attempting to create Notion report page: {page_title}")
     try:
         response = notion.pages.create(
-            parent={"database_id": DATABASE_ID},
+            parent={"database_id": database_id},
             properties=properties,
             children=children,
             cover=cover,

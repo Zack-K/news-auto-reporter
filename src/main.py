@@ -82,7 +82,7 @@ def main():
 
         # 言語検出と翻訳・要約・ポイント・コメント生成
         if is_foreign_language(article["summary"]):
-            print(f"  - 記事を翻訳・要約・ポイント・コメント生成中: {article["title"]}")
+            print(f"  - 記事を翻訳・要約・ポイント・コメント生成中: {article['title']}")
             llm_result = translate_and_summarize_with_gemini(article["summary"])
             article["summary"] = remove_html_tags(llm_result["summary"])
             article["points"] = llm_result["points"]
