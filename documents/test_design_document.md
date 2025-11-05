@@ -205,7 +205,7 @@
 *   **テストレポート**: `pytest-html` や `pytest-cov` などのプラグインを使用し、テスト結果（成功/失敗、カバレッジ）をHTMLレポートやカバレッジレポートとして生成します。これはCI/CDツール（GitHub Actionsなど）で視覚的に確認できるようにします。
 *   **CI/CDパイプラインへの統合**:
     *   `requirements-dev.txt` または `requirements.txt` にテストに必要な依存関係を明記します。
-    *   GitHub Actionsのワークフローにテスト実行ステップを含めます。
+    *   GitHub Actionsのワークフロー（例: `.github/workflows/daily_report.yml` の `build_and_test` ジョブ）にテスト実行ステップを含めます。具体的には、Pythonセットアップ、`uv` のインストール、依存関係のインストール、Ruff (静的解析)、Pytest (単体テスト) を実行します。
     *   単体テストおよび結合テストは、Pull Requestごとに実行し、高速なフィードバックを提供します。
     *   E2Eテストは、上記懸念事項（コスト、実行時間、安定性）を考慮し、毎週など限定された頻度、または本番デプロイ前などに、隔離された環境で実行することを検討します。
 *   **環境変数管理**: CI/CD環境ではAPIキーなどの機密情報は、GitHub Actions Secretsなどのセキュアな方法で管理されます。テストコードはこれらのSecretsを正しく参照するようにします。
