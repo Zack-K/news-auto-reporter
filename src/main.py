@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-import time # 追加
 
 # 他のスクリプトから関数をインポート
 from .rss_single_fetch import fetch_all_entries
@@ -137,7 +136,7 @@ def main():
                 else:
                     print(f"  - Unsplashでキーワード '{image_keywords}' に一致する画像が見つかりませんでした。")
             else:
-                print(f"  - LLMで画像キーワードを生成できませんでした。")
+                print("  - LLMで画像キーワードを生成できませんでした。")
     print(f"[{datetime.now()}] --- 3.5. Unsplashからの画像取得 終了 ---")
 
     print(f"[{datetime.now()}] --- Notionレポートの作成 開始 ---") # 追加

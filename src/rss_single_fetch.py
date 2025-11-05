@@ -3,7 +3,6 @@ import requests
 import feedparser
 # from bs4 import BeautifulSoup # BeautifulSoupは不要になるため削除
 # from urllib.parse import urljoin, urlparse, parse_qs # urljoin, urlparse, parse_qsは不要になるため削除
-import time
 
 
 # _extract_image_from_html関数は削除

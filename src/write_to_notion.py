@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from notion_client.errors import APIResponseError
 from dotenv import load_dotenv
+from typing import Optional
 
 load_dotenv()  # .envファイルを読み込む
 # Notion APIキーとデータベースID
@@ -119,9 +120,6 @@ def ensure_notion_database_properties(notion, database_id):
     except Exception as e:
         print(f"予期せぬエラーが発生しました: {e}")
         return False
-
-
-from typing import Optional
 
 def create_notion_report_page(notion, processed_articles, cover_image_url: Optional[str] = None):
     report_date_str = os.getenv("REPORT_DATE", datetime.now().strftime("%Y-%m-%d"))
