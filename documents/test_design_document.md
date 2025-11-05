@@ -1,4 +1,3 @@
-
 # テスト設計書
 
 #### 1. テスト対象
@@ -21,7 +20,7 @@
 -   **目的**: 各コンポーネントが仕様通りに動作することを確認する。
 -   **範囲**: 各Pythonファイル内の関数。
 -   **戦略**:
-    *   外部サービス（`requests`, `feedparser`, `BeautifulSoup`, `google.generativeai`, `notion_client`, `slack_sdk`など）への呼び出しは、`unittest.mock` を使用して徹底的にモックします。
+    *   外部サービス（`requests`, `feedparser`, `BeautifulSoup`, `google.generativeai`, `notion_client`, `slack_sdk`, `unsplash_api`など）への呼び出しは、`unittest.mock` を使用して徹底的にモックします。
     *   環境変数 (`os.environ`) もモックし、テスト間の独立性を確保します。
     *   `time.sleep` もモックし、テスト実行時間を短縮します。
     *   入力値に対する正常系、異常系、境界値のテストを行います。
@@ -34,7 +33,7 @@
     *   `main.py` が `rss_single_fetch.py`, `llm_processor.py`, `write_to_notion.py`, `send_slack_message.py` の各関数を正しい順序と引数で呼び出すかを検証。
     *   `llm_processor.py` 内の各LLM関連関数間の連携（例: 翻訳→カテゴリ分類→選定）。
 -   **戦略**:
-    *   外部サービス（LLM API、Notion API、Slack API）はモックし、モジュール間のインタラクション（モックされた関数の呼び出し回数、引数など）を検証します。
+    *   外部サービス（LLM API、Notion API、Slack API、Unsplash API）はモックし、モジュール間のインタラクション（モックされた関数の呼び出し回数、引数など）を検証します。
     *   `pytest-mock` などのライブラリを使用し、モックを容易にします。
 
 ##### 2.3. システムテスト / E2Eテスト (System Test / End-to-End Test) - **オプション**
@@ -43,7 +42,7 @@
 -   **目的**: ユーザーシナリオに沿った一連の処理が、実際の外部サービスと連携して問題なく動作することを確認する。
 -   **範囲**: `main.py` の実行から結果（Notionページ作成、Slack通知）までの一連の流れ。
 -   **戦略**:
-    *   **専用のテスト環境**: テスト用のGemini APIキー、NotionデータベースID、Slack Webhook URLを設定し、本番環境とは分離した環境を使用します。これにより、本番データへの影響を防ぎ、APIのレート制限に配慮します。
+    *   **専用のテスト環境**: テスト用のGemini APIキー、NotionデータベースID、Slack Webhook URL、Unsplash APIキーを設定し、本番環境とは分離した環境を使用します。これにより、本番データへの影響を防ぎ、APIのレート制限に配慮します。
     *   **限定的な実行頻度**: フルサイクルビルドやデプロイ前など、比較的低頻度で実行します。
     *   **クリーンアップ処理**: テスト実行後にNotionに作成されたページやSlackに送信されたメッセージを自動的にクリーンアップするメカニズムを実装します。
     *   **ユーザーシナリオテスト**: 実際のユーザーがシステムを利用する際の典型的なシナリオ（例: RSSフィードが提供され、ニュースが取得・処理され、Notionにレポートが作成され、Slackに通知される）に沿ってテストします。
@@ -56,10 +55,11 @@
 
 *   **正常系**:
     *   有効なRSSフィードURLから記事が正しく取得されること。
-        *   タイトル、URL、概要（description/summary）、公開日、画像URLが正しくパースされること。
+        *   タイトル、URL、概要（description/summary）、公開日が正しくパースされること。
+        *   `_extract_image_from_html`ヘルパー関数は、Unsplashから画像を取得するため、RSSフィードや記事本文から画像URLを抽出しないこと。
     *   GoogleアラートのリダイレクトURLが正しく最終記事URLに変換され、画像パス解決 (`urljoin`) も正しく行われること。
-    *   `time.sleep(0.5)` が記事ごとに一度呼び出されていること。
-    *   RSSフィード、OGP/Twitter Card、記事本文のいずれかから画像URLが取得できること。
+    *   `time.sleep(0.5)` が記事コンテンツ取得エラー時に一度呼び出されていること。
+    *   画像URLはUnsplashから取得されるため、RSSフィードや記事本文からは取得されないこと。
 *   **異常系/境界値**:
     *   無効なRSSフィードURLが与えられた場合、空のリストが返され、エラーログが出力されること。
     *   RSSフィードが空、または`entries`がない場合、空のリストが返されること。
@@ -79,7 +79,7 @@
     *   言語検出が困難なテキスト（例: ごく短い文字列）が与えられた場合、`True`を返す（フォールバック）。
 *   **`translate_and_summarize_with_gemini`**:
     *   **正常系**: 外国語テキストが与えられた場合、JSON形式で日本語の要約(`summary`)と3つの初学者向けポイント(`points`)が返されること。
-        *   要約が約200文字であること（厳密な文字数ではなく、指定されたプロンプトに沿っているか）。
+        *   要約が**約180文字**であること（厳密な文字数ではなく、指定されたプロンプトに沿っているか）。
         *   ポイントが3つ生成されていること。
         *   `comment`キーが空文字列であること。
     *   **異常系**:
@@ -111,7 +111,7 @@
         *   Unsplash API呼び出し中にエラーが発生した場合、`None`が返されること。
         *   キーワードに一致する画像が見つからない場合、`None`が返されること。
 *   **`generate_closing_comment_with_gemini`**:
-    *   **正常系**: 選定された記事のリストに基づいて、コミュニケーションを促進する100文字程度のクロージングコメントが生成されること。
+    *   **正常系**: 選定された記事のリストに基づいて、コミュニケーションを促進する**100文字程度**のクロージングコメントが生成されること。
     *   **異常系**:
         *   Gemini API呼び出し中にエラーが発生した場合、デフォルトのフォールバックコメントが返されること。
 
@@ -155,8 +155,9 @@
         *   すべての外部依存関数（`fetch_all_entries`, `initialize_gemini`, `translate_and_summarize_with_gemini`, `categorize_article_with_gemini`, `select_and_summarize_articles_with_gemini`, `generate_image_keywords_with_gemini`, `search_image_from_unsplash`, `generate_closing_comment_with_gemini`, `ensure_notion_database_properties`, `create_notion_report_page`, `send_slack_message`）が正しい順序で、適切な引数とともに呼び出されていること。
         *   `os.environ["REPORT_DATE"]` が正しく設定されていること。
         *   `final_articles_for_report`内の各記事タイトルからHTMLタグが除去されていること。
+        *   `llm_processor.py`から返された要約に対して`remove_html_tags`が適用されていること。
     *   **異常フロー**:
-        *   `GOOGLE_API_KEY`、`GOOGLE_ALERTS_RSS_URLS`、`NOTION_API_KEY`が設定されていない場合、処理が早期終了し、適切なエラーメッセージが出力されること。
+        *   `GOOGLE_API_KEY`、`GOOGLE_ALERTS_RSS_URLS`、`NOTION_API_KEY`、**`UNSPLASH_ACCESS_KEY`**が設定されていない場合、処理が早期終了し、適切なエラーメッセージが出力されること。
         *   `fetch_all_entries`が空のリストを返した場合、処理が早期終了すること。
         *   `select_and_summarize_articles_with_gemini`が空のリストを返した場合、処理が早期終了すること。
         *   Notionデータベースのプロパティ準備(`ensure_notion_database_properties`)に失敗した場合、Notionページ作成(`create_notion_report_page`)がスキップされること。
@@ -166,6 +167,7 @@
 
 *   **`remove_html_tags`**:
     *   HTMLタグを含む文字列が完璧に除去されること（例: `"<p>Hello <b>World</b>!</p>"` -> `"Hello World!"`）。
+    *   **HTMLエンティティ（例: `&nbsp;`）が適切にデコードされ、除去されること。**
     *   HTMLタグを含まない文字列が変更されないこと。
     *   空文字列が与えられた場合、空文字列が返されること。
     *   壊れたHTMLタグ（例: `"Hello <b World!"`）でもエラーなく処理され、可能な限りタグを除去すること。
@@ -181,6 +183,7 @@
     *   一部情報が欠落した記事情報。
     *   日本語、英語など複数の言語の概要。
     *   HTMLタグを含む記事タイトル。
+    *   **HTMLエンティティを含む記事概要。**
 *   **LLM応答データ**:
     *   `llm_processor` の各関数が期待するJSON形式の応答データ。
     *   不正なJSON形式、部分的に欠落したJSON形式の応答データ。
