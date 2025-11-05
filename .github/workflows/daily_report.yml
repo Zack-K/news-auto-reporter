@@ -65,7 +65,7 @@ jobs:
       run: uv venv
 
     - name: Install dependencies
-      run: uv pip install -r requirements.txt
+      run: uv run pip install -r requirements.txt
 
     - name: Run main script
       env:
@@ -76,7 +76,7 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
         UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
-      run: python src/main.py
+      run: uv run python src/main.py
 
     - name: Notify Slack on failure
       if: failure()
