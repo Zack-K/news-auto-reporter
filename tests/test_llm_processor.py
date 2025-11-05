@@ -393,6 +393,3 @@ def test_generate_closing_comment_with_gemini_api_error(mock_generative_model):
         "今日のAIニュースレポートはいかがでしたか？" in result
     )  # フォールバックコメント
     mock_generative_model.generate_content.assert_called_once()
-
-
-

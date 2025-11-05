@@ -118,10 +118,15 @@ def ensure_notion_database_properties(notion, database_id):
         print(f"予期せぬエラーが発生しました: {e}")
         return False
 
-def create_notion_report_page(notion, processed_articles, cover_image_url: Optional[str] = None):
+
+def create_notion_report_page(
+    notion, processed_articles, cover_image_url: Optional[str] = None
+):
     database_id = os.environ.get("NOTION_DATABASE_ID")
     if not database_id:
-        print("エラー: NOTION_DATABASE_ID 環境変数が設定されていません。NotionデータベースIDを設定してください。")
+        print(
+            "エラー: NOTION_DATABASE_ID 環境変数が設定されていません。NotionデータベースIDを設定してください。"
+        )
         return None
 
     report_date_str = os.getenv("REPORT_DATE", datetime.now().strftime("%Y-%m-%d"))
@@ -170,7 +175,8 @@ def create_notion_report_page(notion, processed_articles, cover_image_url: Optio
                 "type": "heading_2",
                 "heading_2": {
                     "rich_text": [
-                        {"type": "text", "text": {"content": f"【{category}】"}}]
+                        {"type": "text", "text": {"content": f"【{category}】"}}
+                    ]
                 },
             }
         )
@@ -187,7 +193,8 @@ def create_notion_report_page(notion, processed_articles, cover_image_url: Optio
                                     "content": article.get("title", "タイトルなし"),
                                     "link": {"url": article.get("url", "#")},
                                 },
-                            }]
+                            }
+                        ]
                     },
                 }
             )
@@ -200,7 +207,8 @@ def create_notion_report_page(notion, processed_articles, cover_image_url: Optio
                             {
                                 "type": "text",
                                 "text": {"content": article.get("summary", "")},
-                            }]
+                            }
+                        ]
                     },
                 }
             )
@@ -233,4 +241,3 @@ def create_notion_report_page(notion, processed_articles, cover_image_url: Optio
     except Exception as e:
         print(f"予期せぬエラーが発生しました: {e}")
         return None
-

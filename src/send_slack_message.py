@@ -72,7 +72,7 @@ def send_slack_message(
                 },
             }
         )
-    
+
     # クロージングコメントを追加
     if closing_comment:
         message_blocks.append(

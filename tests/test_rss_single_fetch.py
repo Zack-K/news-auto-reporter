@@ -47,12 +47,9 @@ class MockFeedParser:
         self.entries = entries
 
 
-@patch("time.sleep")
 @patch("requests.get")
 @patch("feedparser.parse")
-def test_fetch_all_entries_success_basic(
-    mock_feedparser_parse, mock_requests_get, mock_sleep
-):
+def test_fetch_all_entries_success_basic(mock_feedparser_parse, mock_requests_get):
     """
     有効なRSSフィードから記事が正しく取得される基本的なケースをテスト
     """
@@ -91,11 +88,9 @@ def test_fetch_all_entries_success_basic(
     assert articles[0]["summary"] == "Summary of test article 1."
     assert articles[0]["image_url"] is None
 
-    # Verify requests.get was called for the RSS feed
     mock_requests_get.assert_called_once_with(
         "http://example.com/rss", timeout=10, headers={"User-Agent": "RSSFetcher/1.0"}
     )
-    # time.sleepは記事本文のフェッチ時のみに呼び出されるため、ここでは呼び出されない
 
 
 @patch("src.rss_single_fetch.requests.get")
@@ -196,12 +191,9 @@ def test_fetch_all_entries_missing_fields(mock_feedparser_parse, mock_requests_g
     assert articles[2]["summary"] is None
 
 
-@patch("src.rss_single_fetch.time.sleep")
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
-def test_fetch_all_entries_no_image_url_found(
-    mock_feedparser_parse, mock_requests_get, mock_sleep
-):
+def test_fetch_all_entries_no_image_url_found(mock_feedparser_parse, mock_requests_get):
     """画像URLがRSSフィード、OGP/Twitter Card、記事本文のいずれからも取得できない場合のテスト"""
     # Arrange
     article_url = "http://example.com/article_no_image"
@@ -250,8 +242,6 @@ def test_fetch_all_entries_no_image_url_found(
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None
 
-    # time.sleepは記事本文のフェッチ時のみに呼び出されるため、ここでは呼び出されない
-
 
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
@@ -279,11 +269,10 @@ def test_fetch_all_entries_timeout_on_rss_fetch(
     mock_feedparser_parse.assert_not_called()
 
 
-@patch("src.rss_single_fetch.time.sleep")
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
 def test_fetch_all_entries_http_error_on_article_fetch(
-    mock_feedparser_parse, mock_requests_get, mock_sleep
+    mock_feedparser_parse, mock_requests_get
 ):
     """記事コンテンツ取得時のHTTPエラーハンドリングのテスト"""
     article_url = "http://example.com/article_404"
@@ -313,14 +302,12 @@ def test_fetch_all_entries_http_error_on_article_fetch(
     assert articles[0]["title"] == "Article 404"
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None  # エラーのため画像は取得されない
-    mock_sleep.assert_not_called()  # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない
 
 
-@patch("src.rss_single_fetch.time.sleep")
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
 def test_fetch_all_entries_timeout_on_article_fetch(
-    mock_feedparser_parse, mock_requests_get, mock_sleep
+    mock_feedparser_parse, mock_requests_get
 ):
     """記事コンテンツ取得時のタイムアウトエラーハンドリングのテスト"""
     article_url = "http://example.com/article_timeout"
@@ -352,4 +339,3 @@ def test_fetch_all_entries_timeout_on_article_fetch(
     assert articles[0]["title"] == "Article Timeout"
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None  # エラーのため画像は取得されない
-    mock_sleep.assert_not_called()  # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない

@@ -1,5 +1,4 @@
 # rss_single_fetch.py
-import time
 import requests
 import feedparser
 
@@ -27,7 +26,7 @@ def fetch_all_entries(url: str):
         title = entry.get("title", "タイトルなし")
         link = entry.get("link", "#")
         summary = entry.get("summary", "")
-        image_url = None # image_urlはUnsplashから取得するため、ここではNoneのまま
+        image_url = None  # image_urlはUnsplashから取得するため、ここではNoneのまま
 
         article = {
             "title": title,

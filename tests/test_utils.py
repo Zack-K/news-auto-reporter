@@ -21,7 +21,10 @@ def test_remove_html_tags_various_cases(input_text, expected_text):
     [
         ("Hello&nbsp;World!", "Hello World!"),
         ("&lt;p&gt;Hello&amp;World!&lt;/p&gt;", "Hello&World!"),
-        ("Text with &#x27;single quotes&#x27; and &#34;double quotes&#34;.", "Text with 'single quotes' and \"double quotes\"."),
+        (
+            "Text with &#x27;single quotes&#x27; and &#34;double quotes&#34;.",
+            "Text with 'single quotes' and \"double quotes\".",
+        ),
         ("Multiple&nbsp;&nbsp;spaces", "Multiple  spaces"),
     ],
 )
