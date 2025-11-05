@@ -37,7 +37,7 @@ jobs:
         run: uv run ruff check .
   
       - name: Run Pytest (unit tests)
-        run: uv run pytest
+        run: uv run python -m pytest
   
       - name: Prune uv cache
         run: uv cache prune --ci
