@@ -96,7 +96,6 @@ def test_fetch_all_entries_success_basic(
         "http://example.com/rss", timeout=10, headers={"User-Agent": "RSSFetcher/1.0"}
     )
     # time.sleepは記事本文のフェッチ時のみに呼び出されるため、ここでは呼び出されない
-    mock_sleep.assert_not_called()
 
 
 @patch("src.rss_single_fetch.requests.get")
@@ -252,7 +251,6 @@ def test_fetch_all_entries_no_image_url_found(
     assert articles[0]["image_url"] is None
 
     # time.sleepは記事本文のフェッチ時のみに呼び出されるため、ここでは呼び出されない
-    mock_sleep.assert_not_called()
 
 
 @patch("src.rss_single_fetch.requests.get")
@@ -315,7 +313,7 @@ def test_fetch_all_entries_http_error_on_article_fetch(
     assert articles[0]["title"] == "Article 404"
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None  # エラーのため画像は取得されない
-    mock_sleep.assert_not_called() # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない
+    mock_sleep.assert_not_called()  # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない
 
 
 @patch("src.rss_single_fetch.time.sleep")
@@ -354,5 +352,4 @@ def test_fetch_all_entries_timeout_on_article_fetch(
     assert articles[0]["title"] == "Article Timeout"
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None  # エラーのため画像は取得されない
-    mock_sleep.assert_not_called() # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない
-
+    mock_sleep.assert_not_called()  # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない

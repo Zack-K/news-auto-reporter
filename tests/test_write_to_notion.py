@@ -1,4 +1,5 @@
 import pytest
+import os
 from unittest.mock import MagicMock
 from notion_client.errors import APIResponseError
 from src.write_to_notion import (
@@ -22,7 +23,6 @@ def mock_env_vars(monkeypatch):
     monkeypatch.setenv("NOTION_PROPERTY_STATUS", "Status")
     monkeypatch.setenv("NOTION_PROPERTY_ABSTRACT", "Abstract")
     monkeypatch.setenv("NOTION_PROPERTY_URL", "URL")
-    monkeypatch.setattr("src.write_to_notion.DATABASE_ID", "test_database_id")
 
 
 @pytest.fixture
@@ -125,7 +125,7 @@ class TestEnsureNotionDatabaseProperties:
             }
         }
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is True
         mock_notion_client.databases.update.assert_not_called()
@@ -144,7 +144,7 @@ class TestEnsureNotionDatabaseProperties:
             }
         }
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is True
         mock_notion_client.databases.update.assert_called_once()
@@ -168,7 +168,7 @@ class TestEnsureNotionDatabaseProperties:
             }
         }
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is True
         mock_notion_client.databases.update.assert_called_once()
@@ -186,7 +186,7 @@ class TestEnsureNotionDatabaseProperties:
             message="Object not found",
         )
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is False
 
@@ -198,7 +198,7 @@ class TestEnsureNotionDatabaseProperties:
             message="Unauthorized",
         )
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is False
 
@@ -208,7 +208,7 @@ class TestEnsureNotionDatabaseProperties:
             "Some unexpected error"
         )
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is False
 
@@ -227,7 +227,7 @@ class TestEnsureNotionDatabaseProperties:
             }
         }
         result = ensure_notion_database_properties(
-            mock_notion_client, "test_database_id"
+            mock_notion_client, os.environ.get("NOTION_DATABASE_ID")
         )
         assert result is False
         mock_notion_client.databases.update.assert_not_called()
@@ -253,7 +253,7 @@ class TestCreateNotionReportPage:
         args, kwargs = mock_notion_client.pages.create.call_args
 
         # プロパティの確認
-        assert kwargs["parent"]["database_id"] == "test_database_id"
+        assert kwargs["parent"]["database_id"] == os.environ.get("NOTION_DATABASE_ID")
         assert (
             kwargs["properties"][PROP_NAME]["title"][0]["text"]["content"]
             == "AIニュースレポート - 2023-11-01"
@@ -458,4 +458,3 @@ class TestCreateNotionReportPage:
             mock_notion_client, sample_processed_articles, cover_image_url=None
         )
         assert result is None
-
