@@ -76,7 +76,7 @@ jobs:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
         UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
-      run: uv run python src/main.py
+      run: uv run python -m src.main
 
     - name: Notify Slack on failure
       if: failure()
