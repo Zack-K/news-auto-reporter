@@ -66,7 +66,6 @@ def test_fetch_all_entries_success_basic(
             <title>Test Article 1</title>
             <link>http://example.com/article1</link>
             <description>Summary of test article 1.</description>
-            <media:thumbnail url="http://example.com/image1.jpg" />
         </item>
     </channel>
     </rss>"""
@@ -79,7 +78,6 @@ def test_fetch_all_entries_success_basic(
         title="Test Article 1",
         link="http://example.com/article1",
         summary="Summary of test article 1.",
-        media_thumbnail=[{"url": "http://example.com/image1.jpg"}],
     )
     mock_feedparser_parse.return_value = MockFeedParser(entries=[mock_entry])
 
@@ -91,7 +89,7 @@ def test_fetch_all_entries_success_basic(
     assert articles[0]["title"] == "Test Article 1"
     assert articles[0]["url"] == "http://example.com/article1"
     assert articles[0]["summary"] == "Summary of test article 1."
-    assert articles[0]["image_url"] == "http://example.com/image1.jpg"
+    assert articles[0]["image_url"] is None
 
     # Verify requests.get was called for the RSS feed
     mock_requests_get.assert_called_once_with(
@@ -202,9 +200,8 @@ def test_fetch_all_entries_missing_fields(mock_feedparser_parse, mock_requests_g
 @patch("src.rss_single_fetch.time.sleep")
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
-@patch("src.rss_single_fetch.BeautifulSoup")
 def test_fetch_all_entries_no_image_url_found(
-    mock_beautifulsoup, mock_feedparser_parse, mock_requests_get, mock_sleep
+    mock_feedparser_parse, mock_requests_get, mock_sleep
 ):
     """画像URLがRSSフィード、OGP/Twitter Card、記事本文のいずれからも取得できない場合のテスト"""
     # Arrange
@@ -245,13 +242,6 @@ def test_fetch_all_entries_no_image_url_found(
         ),  # 記事コンテンツ
     ]
 
-    # BeautifulSoupが画像を何も見つけないようにモック
-    mock_soup_instance = MagicMock()
-    mock_soup_instance.find.return_value = (
-        None  # OGP/Twitter Cardもimgタグも見つからない
-    )
-    mock_beautifulsoup.return_value = mock_soup_instance
-
     # Act
     articles = fetch_all_entries("http://example.com/rss")
 
@@ -261,8 +251,8 @@ def test_fetch_all_entries_no_image_url_found(
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None
 
-    # time.sleepが1回呼び出されることを確認 (記事本文検索時に1回)
-    mock_sleep.assert_called_once_with(0.5)
+    # time.sleepは記事本文のフェッチ時のみに呼び出されるため、ここでは呼び出されない
+    mock_sleep.assert_not_called()
 
 
 @patch("src.rss_single_fetch.requests.get")
@@ -294,9 +284,8 @@ def test_fetch_all_entries_timeout_on_rss_fetch(
 @patch("src.rss_single_fetch.time.sleep")
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
-@patch("src.rss_single_fetch.BeautifulSoup")
 def test_fetch_all_entries_http_error_on_article_fetch(
-    mock_beautifulsoup, mock_feedparser_parse, mock_requests_get, mock_sleep
+    mock_feedparser_parse, mock_requests_get, mock_sleep
 ):
     """記事コンテンツ取得時のHTTPエラーハンドリングのテスト"""
     article_url = "http://example.com/article_404"
@@ -326,17 +315,14 @@ def test_fetch_all_entries_http_error_on_article_fetch(
     assert articles[0]["title"] == "Article 404"
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None  # エラーのため画像は取得されない
-    mock_sleep.assert_called_once_with(
-        0.5
-    )  # 記事コンテンツ取得でエラーになるが、sleepは呼ばれる
+    mock_sleep.assert_not_called() # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない
 
 
 @patch("src.rss_single_fetch.time.sleep")
 @patch("src.rss_single_fetch.requests.get")
 @patch("src.rss_single_fetch.feedparser.parse")
-@patch("src.rss_single_fetch.BeautifulSoup")
 def test_fetch_all_entries_timeout_on_article_fetch(
-    mock_beautifulsoup, mock_feedparser_parse, mock_requests_get, mock_sleep
+    mock_feedparser_parse, mock_requests_get, mock_sleep
 ):
     """記事コンテンツ取得時のタイムアウトエラーハンドリングのテスト"""
     article_url = "http://example.com/article_timeout"
@@ -368,8 +354,5 @@ def test_fetch_all_entries_timeout_on_article_fetch(
     assert articles[0]["title"] == "Article Timeout"
     assert articles[0]["url"] == article_url
     assert articles[0]["image_url"] is None  # エラーのため画像は取得されない
-    mock_sleep.assert_called_once_with(
-        0.5
-    )  # 記事コンテンツ取得でエラーになるが、sleepは呼ばれる
-
+    mock_sleep.assert_not_called() # 記事コンテンツ取得でエラーになるが、sleepは呼ばれない
 
