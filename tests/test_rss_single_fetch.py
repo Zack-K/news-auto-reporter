@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from src.rss_single_fetch import fetch_all_entries
 import requests
 

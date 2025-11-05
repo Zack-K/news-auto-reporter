@@ -4,23 +4,25 @@ from dotenv import load_dotenv
 import time # 追加
 
 # 他のスクリプトから関数をインポート
-from rss_single_fetch import fetch_all_entries
-from write_to_notion import (
+from .rss_single_fetch import fetch_all_entries
+from .write_to_notion import (
     create_notion_report_page,
     ensure_notion_database_properties,
     DATABASE_ID,
 )
 from notion_client import Client
-from llm_processor import (
+from .llm_processor import (
     initialize_gemini,
     translate_and_summarize_with_gemini,
     is_foreign_language,
     categorize_article_with_gemini,
     select_and_summarize_articles_with_gemini,
     generate_closing_comment_with_gemini,
+    generate_image_keywords_with_gemini, # 追加
+    search_image_from_unsplash,         # 追加
 )
-from send_slack_message import send_slack_message
-from utils import remove_html_tags
+from .send_slack_message import send_slack_message
+from .utils import remove_html_tags
 
 load_dotenv()  # .envファイルを読み込む
 
@@ -81,15 +83,16 @@ def main():
 
         # 言語検出と翻訳・要約・ポイント・コメント生成
         if is_foreign_language(article["summary"]):
-            print(f"  - 記事を翻訳・要約・ポイント・コメント生成中: {article['title']}")
+            print(f"  - 記事を翻訳・要約・ポイント・コメント生成中: {article["title"]}")
             llm_result = translate_and_summarize_with_gemini(article["summary"])
-            article["summary"] = llm_result["summary"]
+            article["summary"] = remove_html_tags(llm_result["summary"])
             article["points"] = llm_result["points"]
             # article["comment"] = llm_result["comment"]
         else:
-            print(f"  - 記事は日本語であるため翻訳はスキップ: {article['title']}")
+            print(f"  - 記事は日本語であるため翻訳はスキップ: {article["title"]}")
             # 日本語記事でもポイントとコメントを生成
             llm_result = translate_and_summarize_with_gemini(article["summary"])
+            article["summary"] = remove_html_tags(llm_result["summary"])
             article["points"] = llm_result["points"]
             # article["comment"] = llm_result["comment"]
 
@@ -118,6 +121,25 @@ def main():
 
     print(f"[{datetime.now()}] --- 3. LLMによる記事選定と絞り込み 終了 ---") # 追加
 
+    # 追加: 選定されたすべての記事に対してUnsplashから画像を検索・取得
+    print(f"[{datetime.now()}] --- 3.5. Unsplashからの画像取得 開始 ---")
+    for article in final_articles_for_report:
+        if not article.get("image_url"): # image_urlがまだ設定されていない場合のみ
+            print(f"  - 画像URLが見つかりません。LLMでキーワード生成後、Unsplashで検索します: {article['title']}")
+            image_keywords = generate_image_keywords_with_gemini(
+                article["title"], article["summary"], article["category"]
+            )
+            if image_keywords:
+                image_url = search_image_from_unsplash(image_keywords)
+                if image_url:
+                    article["image_url"] = image_url
+                    print(f"  - Unsplashから画像URLを取得しました: {image_url}")
+                else:
+                    print(f"  - Unsplashでキーワード '{image_keywords}' に一致する画像が見つかりませんでした。")
+            else:
+                print(f"  - LLMで画像キーワードを生成できませんでした。")
+    print(f"[{datetime.now()}] --- 3.5. Unsplashからの画像取得 終了 ---")
+
     print(f"[{datetime.now()}] --- Notionレポートの作成 開始 ---") # 追加
     
 
@@ -136,7 +158,8 @@ def main():
         return
 
     print("Creating Notion report page...")
-    notion_report_url = create_notion_report_page(notion, final_articles_for_report)
+    # create_notion_report_page 関数呼び出し時に、記事のimage_urlがカバー画像として利用されることを想定
+    notion_report_url = create_notion_report_page(notion, final_articles_for_report, cover_image_url=final_articles_for_report[0].get("image_url"))
     print(f"[{datetime.now()}] --- Notionレポートの作成 終了 ---") # 追加
 
     print(f"[{datetime.now()}] --- 4. Slack通知メッセージの作成と送信 開始 ---") # 追加

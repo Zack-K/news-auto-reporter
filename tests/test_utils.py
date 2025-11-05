@@ -1,6 +1,5 @@
 import pytest
 from src.utils import remove_html_tags
-import html # htmlモジュールをインポート
 
 
 @pytest.mark.parametrize(

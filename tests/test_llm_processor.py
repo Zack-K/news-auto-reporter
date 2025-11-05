@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import MagicMock, patch
-import os
 from src.llm_processor import (
     initialize_gemini,
     is_foreign_language,
