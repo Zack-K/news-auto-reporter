@@ -88,7 +88,7 @@ def main():
             article["points"] = llm_result["points"]
             # article["comment"] = llm_result["comment"]
         else:
-            print(f"  - 記事は日本語であるため翻訳はスキップ: {article["title"]}")
+            print(f"  - 記事は日本語であるため翻訳はスキップ: {article['title']}")
             # 日本語記事でもポイントとコメントを生成
             llm_result = translate_and_summarize_with_gemini(article["summary"])
             article["summary"] = remove_html_tags(llm_result["summary"])
