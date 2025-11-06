@@ -14,7 +14,18 @@
 - **Notionレポートの作成:** 選定された記事を基に、Notionに「AIニュースレポート - YYYY年MM月DD日」という単一のレポートページを作成します。このページには、導入文、カテゴリごとの見出し、各記事のタイトル（URLリンク付き）、要約、初学者向けポイント、会話を促すコメント、そしてレポートのカバー画像（Unsplashから検索された画像）が含まれます。
 
 ## 実行スケジュール
-毎日午前8時00分（日本標準時）に定期実行されます。このスケジュールは、cronなどの外部ツールによって設定されることを想定しています。
+毎日午前8時00分（日本標準時）に定期実行されます。このスケジュールは、GitHub Actionsのワークフローによって自動化されています。
+
+**GitHub Actionsによる自動実行:**
+*   **ワークフローファイル:** `.github/workflows/daily_report.yml`
+*   **トリガー:**
+    *   `schedule`: 毎日午前8時00分（日本標準時）に実行されるように設定されています。
+    *   `workflow_dispatch`: GitHub UIから手動でワークフローを実行することも可能です。
+*   **ジョブの構成:**
+    *   `build_and_test`: コードのチェックアウト、Python環境のセットアップ、依存関係のインストール、Ruffによる静的解析、Pytestによる単体テストを実行します。
+    *   `run_report`: `build_and_test` ジョブが成功した場合にのみ実行されます。AIニュースレポートの生成と通知のメイン処理を実行します。
+*   **環境変数:** 必要なAPIキーや設定値は、GitHubリポジトリのSecretsとして安全に管理されています。
+*   **失敗時の通知:** ワークフローの実行が失敗した場合、Slackに通知が送信されます。
 
 ## 環境構築
 本プロジェクトの環境構築については、[環境構築ガイド](documents/setup_guide.md) を参照してください。
@@ -33,6 +44,8 @@
 | `NOTION_DATABASE_ID`        | NotionデータベースID                    |
 | `SLACK_WEBHOOK_URL`         | Slack Incoming Webhook URL              |
 | `SLACK_CHANNEL`             | Slack通知チャンネル名                   |
+| `UNSPLASH_ACCESS_KEY`       | Unsplash APIキー                    |
+| `REPORT_DATE`               | レポートの日付（GitHub Actionsで自動設定） |
 
 ## 実行例
 
@@ -44,6 +57,7 @@ export NOTION_API_KEY="your_notion_key"
 export NOTION_DATABASE_ID="your_db_id"
 export SLACK_WEBHOOK_URL="your_webhook_url"
 export SLACK_CHANNEL="#ai-news"
+export UNSPLASH_ACCESS_KEY="your_unsplash_key"
 
 # 2. パイプラインを実行
 python main.py
@@ -60,7 +74,8 @@ project/
 ├── write_to_notion.py         # Notionへの書き込み
 ├── send_slack_message.py      # Slack通知
 ├── main.py                    # 全体実行パイプライン
-├── llm_processor.py           # LLMによる記事処理（翻訳、要約、カテゴリ分類、選定）
+├── llm_processor.py           # LLMによる記事処理（翻訳、要約、カテゴリ分類、選定、画像キーワード生成、クロージングコメント生成）
+├── utils.py                   # 共通ユーティリティ（HTMLタグ除去など）
 └── .env                       # 環境変数定義
 ```
 
@@ -68,3 +83,6 @@ project/
 *   Notion APIキーには、対象データベースへの「編集」権限が付与されている必要があります。
 *   Slack Webhook URLは、指定されたチャンネルへの投稿権限が必要です。
 *   LLMのAPI呼び出しにはレート制限があるため、大量の記事を処理する場合は注意が必要です。
+*   LLMによる要約、ポイント、クロージングコメントは、指定された文字数に制限される場合があります。
+*   **Unsplash APIの利用について**: Unsplash APIの利用には、利用規約とレート制限があります。これらを遵守し、適切な利用を心がけてください。
+*   **画像検索の関連性**: Unsplashからの画像検索は、LLMが生成するキーワードの精度に依存します。必ずしも記事内容に完全に合致する画像が取得できるとは限りません。

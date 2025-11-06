@@ -48,8 +48,8 @@ AI分野の最新ニュースを自動で取得・要約し、SlackやNotion、�
   信頼性         RSS取得・投稿処理での例外処理・再試行機能を実装
   運用性         運用メンバー（技術者2名＋PM1名）が片手間で管理可能
   継続性         非営利コミュニティ運営を前提に運用コストを最小化
-  自動化         Claude CodeやGitHub Actionsを活用して極力人手を省く
-  セキュリティ   Slack・Notion・GitHub APIトークンを安全に管理
+  自動化         GitHub Actionsを活用し、CI/CDおよび定期実行により極力人手を省く
+  セキュリティ   Slack・Notion・GitHub APIトークンをGitHub Actions Secretsで安全に管理
   ログ・監視     投稿履歴・エラー情報をSlackとNotionに記録
 
 ------------------------------------------------------------------------

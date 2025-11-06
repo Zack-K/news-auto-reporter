@@ -3,15 +3,9 @@ import json
 from datetime import datetime
 from notion_client.errors import APIResponseError
 from dotenv import load_dotenv
+from typing import Optional
 
 load_dotenv()  # .envファイルを読み込む
-# Notion APIキーとデータベースID
-DATABASE_ID = os.environ.get("NOTION_DATABASE_ID")
-
-if not DATABASE_ID:
-    raise ValueError(
-        "NOTION_DATABASE_ID 環境変数が設定されていません。NotionデータベースIDを設定してください。"
-    )
 
 # Notionプロパティ名を環境変数から取得、デフォルトは日本語
 PROP_NAME = os.environ.get("NOTION_PROPERTY_NAME", "Name")
@@ -22,6 +16,10 @@ PROP_URL = os.environ.get("NOTION_PROPERTY_URL", "URL")
 
 
 def ensure_notion_database_properties(notion, database_id):
+    if not database_id:
+        print("エラー: NotionデータベースIDが指定されていません。")
+        return False
+
     # Define expected properties with their types and configurations
     expected_properties_config = {
         PROP_NAME: {"type": "title", "config": {"title": {}}},
@@ -38,7 +36,13 @@ def ensure_notion_database_properties(notion, database_id):
 
     try:
         db_info = notion.databases.retrieve(database_id=database_id)
+        print(
+            f"DEBUG: Notion database info: {json.dumps(db_info, ensure_ascii=False, indent=2)}"
+        )  # 追加
         existing_properties = db_info["properties"]
+        print(
+            f"DEBUG: Existing Notion properties: {json.dumps(existing_properties, ensure_ascii=False, indent=2)}"
+        )  # 追加
 
         properties_to_update = {}
         needs_update_call = False
@@ -121,7 +125,16 @@ def ensure_notion_database_properties(notion, database_id):
         return False
 
 
-def create_notion_report_page(notion, processed_articles):
+def create_notion_report_page(
+    notion, processed_articles, cover_image_url: Optional[str] = None
+):
+    database_id = os.environ.get("NOTION_DATABASE_ID")
+    if not database_id:
+        print(
+            "エラー: NOTION_DATABASE_ID 環境変数が設定されていません。NotionデータベースIDを設定してください。"
+        )
+        return None
+
     report_date_str = os.getenv("REPORT_DATE", datetime.now().strftime("%Y-%m-%d"))
     page_title = f"AIニュースレポート - {report_date_str}"
     introduction_text = "データサイエンス、データエンジニアリング、データ分析の学習者向けに、AIの最新ニュースを毎日お届けします。"
@@ -130,16 +143,17 @@ def create_notion_report_page(notion, processed_articles):
     properties = {
         PROP_NAME: {"title": [{"text": {"content": page_title}}]},
         PROP_DATE: {"date": {"start": report_date_str}},
-        PROP_STATUS: {"status": {"name": "Published"}},
     }
+    print(
+        f"DEBUG: Notion page properties being sent: {json.dumps(properties, ensure_ascii=False, indent=2)}"
+    )  # 追加
 
     # カバー画像の設定
     cover = None
-    # processed_articlesの中から最初の記事のimage_urlをカバーとして使用
-    if processed_articles and processed_articles[0].get("image_url"):
+    if cover_image_url:
         cover = {
             "type": "external",
-            "external": {"url": processed_articles[0]["image_url"]},
+            "external": {"url": cover_image_url},
         }
 
     # ページコンテンツのブロックを構築
@@ -169,7 +183,8 @@ def create_notion_report_page(notion, processed_articles):
                 "type": "heading_2",
                 "heading_2": {
                     "rich_text": [
-                        {"type": "text", "text": {"content": f"【{category}】"}}]
+                        {"type": "text", "text": {"content": f"【{category}】"}}
+                    ]
                 },
             }
         )
@@ -186,7 +201,8 @@ def create_notion_report_page(notion, processed_articles):
                                     "content": article.get("title", "タイトルなし"),
                                     "link": {"url": article.get("url", "#")},
                                 },
-                            }]
+                            }
+                        ]
                     },
                 }
             )
@@ -199,7 +215,8 @@ def create_notion_report_page(notion, processed_articles):
                             {
                                 "type": "text",
                                 "text": {"content": article.get("summary", "")},
-                            }]
+                            }
+                        ]
                     },
                 }
             )
@@ -208,7 +225,7 @@ def create_notion_report_page(notion, processed_articles):
     print(f"Attempting to create Notion report page: {page_title}")
     try:
         response = notion.pages.create(
-            parent={"database_id": DATABASE_ID},
+            parent={"database_id": database_id},
             properties=properties,
             children=children,
             cover=cover,
@@ -232,4 +249,3 @@ def create_notion_report_page(notion, processed_articles):
     except Exception as e:
         print(f"予期せぬエラーが発生しました: {e}")
         return None
-

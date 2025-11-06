@@ -1,0 +1,94 @@
+name: Daily AI News Report
+
+on:
+  push:
+    branches: [develop, main]
+  schedule:
+    # 毎日午前8時00分（日本標準時）に実行 (UTC 23:00)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # 手動実行を可能にする
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+  
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+  
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+  
+      - name: Install uv and enable caching
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 'latest'
+          enable-cache: true
+
+      - name: Create virtual environment
+        run: uv venv
+  
+      - name: Install dependencies
+        run: uv pip install -r requirements.txt
+  
+      - name: Run Ruff (static analysis)
+        run: uv run ruff check .
+  
+      - name: Run Pytest (unit tests)
+        run: uv run python -m pytest
+  
+      - name: Prune uv cache
+        run: uv cache prune --ci
+
+  run_report:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install uv and enable caching
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: 'latest'
+        enable-cache: true
+
+    - name: Create virtual environment
+      run: uv venv
+
+    - name: Install dependencies
+      run: uv pip install -r requirements.txt
+    - name: Verify installed packages
+      run: uv pip freeze
+    - name: Run main script
+      env:
+        GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        GOOGLE_ALERTS_RSS_URLS: ${{ secrets.GOOGLE_ALERTS_RSS_URLS }}
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+        UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+      run: uv run python -m src.main
+
+    - name: Notify Slack on failure
+      if: failure()
+      uses: slackapi/slack-github-action@v1.26.0
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      with:
+        payload: |
+          {
+            "text": "GitHub Actions workflow for Daily AI News Report failed! Check the logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+
+    - name: Prune uv cache
+      run: uv cache prune --ci
