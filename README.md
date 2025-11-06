@@ -21,6 +21,9 @@
 *   **トリガー:**
     *   `schedule`: 毎日午前8時00分（日本標準時）に実行されるように設定されています。
     *   `workflow_dispatch`: GitHub UIから手動でワークフローを実行することも可能です。
+*   **ジョブの構成:**
+    *   `build_and_test`: コードのチェックアウト、Python環境のセットアップ、依存関係のインストール、Ruffによる静的解析、Pytestによる単体テストを実行します。
+    *   `run_report`: `build_and_test` ジョブが成功した場合にのみ実行されます。AIニュースレポートの生成と通知のメイン処理を実行します。
 *   **環境変数:** 必要なAPIキーや設定値は、GitHubリポジトリのSecretsとして安全に管理されています。
 *   **失敗時の通知:** ワークフローの実行が失敗した場合、Slackに通知が送信されます。
 
@@ -42,6 +45,7 @@
 | `SLACK_WEBHOOK_URL`         | Slack Incoming Webhook URL              |
 | `SLACK_CHANNEL`             | Slack通知チャンネル名                   |
 | `UNSPLASH_ACCESS_KEY`       | Unsplash APIキー                    |
+| `REPORT_DATE`               | レポートの日付（GitHub Actionsで自動設定） |
 
 ## 実行例
 
