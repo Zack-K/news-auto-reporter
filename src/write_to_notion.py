@@ -36,7 +36,13 @@ def ensure_notion_database_properties(notion, database_id):
 
     try:
         db_info = notion.databases.retrieve(database_id=database_id)
+        print(
+            f"DEBUG: Notion database info: {json.dumps(db_info, ensure_ascii=False, indent=2)}"
+        )  # 追加
         existing_properties = db_info["properties"]
+        print(
+            f"DEBUG: Existing Notion properties: {json.dumps(existing_properties, ensure_ascii=False, indent=2)}"
+        )  # 追加
 
         properties_to_update = {}
         needs_update_call = False
@@ -137,8 +143,10 @@ def create_notion_report_page(
     properties = {
         PROP_NAME: {"title": [{"text": {"content": page_title}}]},
         PROP_DATE: {"date": {"start": report_date_str}},
-        PROP_STATUS: {"status": {"name": "Published"}},
     }
+    print(
+        f"DEBUG: Notion page properties being sent: {json.dumps(properties, ensure_ascii=False, indent=2)}"
+    )  # 追加
 
     # カバー画像の設定
     cover = None

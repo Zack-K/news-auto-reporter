@@ -259,7 +259,6 @@ class TestCreateNotionReportPage:
             == "AIニュースレポート - 2023-11-01"
         )
         assert kwargs["properties"][PROP_DATE]["date"]["start"] == "2023-11-01"
-        assert kwargs["properties"][PROP_STATUS]["status"]["name"] == "Published"
 
         # カバー画像の確認
         assert kwargs["cover"]["type"] == "external"

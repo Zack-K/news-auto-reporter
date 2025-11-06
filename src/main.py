@@ -75,6 +75,9 @@ def main():
 
     processed_articles_with_llm_info = []
     for article in all_articles:
+        # 記事タイトルからHTMLタグを除去
+        article["title"] = remove_html_tags(article["title"])
+
         print(f"Processing article: {article['title']}")
 
         llm_result = {"summary": article["summary"], "points": [], "comment": ""}
@@ -115,11 +118,6 @@ def main():
     if not final_articles_for_report:
         print("No articles selected for the report. Exiting.")
         return
-    # 追加: final_articles_for_report内の各記事タイトルからHTMLタグを除去
-    for article in final_articles_for_report:
-        article["title"] = remove_html_tags(article["title"])
-
-    print(f"[{datetime.now()}] --- 3. LLMによる記事選定と絞り込み 終了 ---")
 
     # 追加: 選定されたすべての記事に対してUnsplashから画像を検索・取得
     print(f"[{datetime.now()}] --- 3.5. Unsplashからの画像取得 開始 ---")
@@ -160,7 +158,7 @@ def main():
         )
         return
 
-    notion = Client(auth=notion_api_key)
+    notion = Client(auth=notion_api_key, notion_version="2022-06-28")
     if not ensure_notion_database_properties(notion, notion_database_id):
         print(
             "エラー: Notionデータベースのプロパティの準備に失敗しました。Notionページ作成をスキップします。"
